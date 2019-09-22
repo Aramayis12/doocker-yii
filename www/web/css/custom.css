@@ -1,0 +1,39 @@
+#payment {
+  background-color: #fff!important;
+}
+
+.error-msg {
+  color: #A00000;
+  font-size: 12px;
+}
+
+@media (max-width: 767px){
+  div#slide-3-layer-3, div#slide-10-layer-3, div#slide-11-layer-3 {
+    font-size: 28px !important;
+  }
+
+  div#slide-3-layer-4, div#slide-11-layer-4, div#slide-10-layer-4 {
+    font-size: 22px !important;
+  }
+
+  .select_container:before {
+    width: 2em!important;
+  }
+
+  .select_container:after {
+    right: 1em!important;
+  }
+
+  .select_container select {
+    padding-left: 0.4em!important;
+    padding-right: 2em!important;
+  }
+
+  .shop_table .product-price {
+    width: 70px;
+  }
+
+  .pay_type_attrib_extended {
+    text-align:center;
+  }
+}

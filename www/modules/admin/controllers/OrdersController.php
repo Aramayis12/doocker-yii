@@ -1,0 +1,166 @@
+<?php
+
+namespace app\modules\admin\controllers;
+
+use Yii;
+use app\models\Orders;
+use app\models\OrdersSearch;
+use yii\web\Controller;
+use yii\web\NotFoundHttpException;
+use yii\filters\VerbFilter;
+
+/**
+ * OrdersController implements the CRUD actions for Orders model.
+ */
+class OrdersController extends Controller
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function behaviors()
+    {
+        return [
+            'verbs' => [
+                'class' => VerbFilter::className(),
+                'actions' => [
+                    'delete' => ['POST'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Lists all Orders models.
+     * @return mixed
+     */
+    public function actionIndex()
+    {
+        $searchModel = new OrdersSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+        return $this->render('index', [
+            'searchModel' => $searchModel,
+            'dataProvider' => $dataProvider,
+        ]);
+    }
+
+    /**
+     * Displays a single Orders model.
+     * @param integer $id
+     * @return mixed
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    public function actionView($id)
+    {
+        return $this->render('view', [
+            'model' => $this->findModel($id),
+        ]);
+    }
+
+    /**
+     * Creates a new Orders model.
+     * If creation is successful, the browser will be redirected to the 'view' page.
+     * @return mixed
+     */
+    public function actionCreate()
+    {
+        $model = new Orders();
+
+        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            return $this->redirect(['view', 'id' => $model->id]);
+        }
+
+        return $this->render('create', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Updates an existing Orders model.
+     * If update is successful, the browser will be redirected to the 'view' page.
+     * @param integer $id
+     * @return mixed
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    public function actionUpdate($id)
+    {
+        $model = $this->findModel($id);
+
+        if ($model->load(Yii::$app->request->post())) {
+            if($model->shipping_status == 'ORDER_DISPATCHED' && $model->shipping_dispatched_email != 1){
+              // Months
+              $months = array(1 => 'Հունվար',2 => 'Փետրվար.', 3 => 'Մարտ',4 => 'Ապրիլ',
+                5 => 'Մայիս',6 => 'Հունիս',7 => 'Հուլիս',8 => 'Օգոստոս',9 => 'Սեպտեմբեր',
+                10 => 'Հոկտեմբեր',11 => 'Նոյեմբեր',12 => 'ԴԵկտեմբեր'
+              );
+
+              // Send E-mail
+              $html = '
+              <h3>Պատվերը ճանապարհին է</h3>
+              <p>Առաքման ամիս, օր, ժամ։ '.$months[$model->month].', '.$model->day.', '.$model->time.'</p>
+
+              <p><b>Սիրելի </b>'.$model->first_name.' '. $model->last_name . ' Շնորհակալություն ենք հայտնում մեր ծառայություններից օգտվելու համար</p>
+              <p>Հարցերի դեպքում կարող էք կապնվել մեզ հետ մեր ֆեյբուքյան էջի միջոցով</p>
+              <p>Սիրով Ձեր <b>'.Yii::$app->name.'</b></p>';
+
+              $text = '
+              Պատվերը ճանապարհին է
+              Առաքման ամիս, օր, ժամ։ '.$months[$model->month].', '.$model->day.', '.$model->time.'
+
+              Սիրելի '.$model->first_name.' '. $model->last_name . ' Շնորհակալություն ենք հայտնում մեր ծառայություններից օգտվելու համար
+              Հարցերի դեպքում կարող էք կապնվել մեզ հետ մեր ֆեյբուքյան էջի միջոցով
+              Սիրով Ձեր '.Yii::$app->name.'';
+
+              // Send to User
+              $userEmail = Yii::$app->mailer->compose()
+                      ->setTo($model->email)
+                      ->setFrom([Yii::$app->params['infoEmail'] => Yii::$app->name . ' robot'])
+                      ->setSubject('Ձեր պատվերը ճանապարհին է')
+                      ->setTextBody($text)
+                      ->setHtmlBody($html);
+
+              $userEmail->send();
+
+              $model->shipping_dispatched_email = 1;
+            }
+
+            if($model->save()){
+              return $this->redirect(['view', 'id' => $model->id]);
+            }
+        }
+
+        return $this->render('update', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Deletes an existing Orders model.
+     * If deletion is successful, the browser will be redirected to the 'index' page.
+     * @param integer $id
+     * @return mixed
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    public function actionDelete($id)
+    {
+        $this->findModel($id)->delete();
+
+        return $this->redirect(['index']);
+    }
+
+    /**
+     * Finds the Orders model based on its primary key value.
+     * If the model is not found, a 404 HTTP exception will be thrown.
+     * @param integer $id
+     * @return Orders the loaded model
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    protected function findModel($id)
+    {
+        if (($model = Orders::findOne($id)) !== null) {
+            return $model;
+        }
+
+        throw new NotFoundHttpException('The requested page does not exist.');
+    }
+}
